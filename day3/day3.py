@@ -1,6 +1,7 @@
 import numpy as np
 
-def increment_matrix(mat, path, cur, wire_nb):
+def increment_matrix(mat, path, middle, wire_nb):
+  cur = [middle, middle]
   for elt in path.split(','):
     direction = elt[0]
     steps = int(elt[1:])
@@ -22,7 +23,7 @@ def increment_matrix(mat, path, cur, wire_nb):
         mat[cur[0], cur[1] - i] += wire_nb
       cur[1] -= steps
 
-def find_dist_to_intersection(mat, path, intersection, middle):
+def go_through_intersection(mat, path, intersection, middle):
   cur = [middle, middle]
   dist_to_intersection = 0
 
@@ -59,52 +60,54 @@ def find_dist_to_intersection(mat, path, intersection, middle):
           cur[1] -=1
           dist_to_intersection += 1
 
+def initialise_matrix():
+    size = 20001
+    center = int(size / 2)
+    mat1 = np.zeros((size, size))
+    mat1[center, center] = 1
+    return mat1, center
+
 def main():
   input_name = 'input.txt'
-  
+
   with open(input_name,'r') as file:
-    size = 20001 
-    middle = int(size / 2)
-    mat1 = np.zeros((size, size))
-    mat1[middle,middle] = 1
-    
+    mat1, matrix_center = initialise_matrix()
+
     # part1
     for ix, line in enumerate(file):
-      current = [middle, middle]
-      increment_matrix(mat1, line.strip(), current, ix + 1)
+      increment_matrix(mat1, line.strip(), matrix_center, ix + 1)
 
-    print('Part1, finding wire intersections.')
+    print('finding intersections')
     res = np.where(mat1 == 3)
-    print(f'{len(res[0])} intersections found.')
+    amount_intersections = len(res[0])
+    print(f'{amount_intersections} intersections found')
     closest = 10000
-    for i in range(len(res[0])):
-      x_dist = abs(res[0][i] - middle)
-      y_dist = abs(res[1][i] - middle)
+
+    for i in range(amount_intersections):
+      x_dist = abs(res[0][i] - matrix_center)
+      y_dist = abs(res[1][i] - matrix_center)
       tot = x_dist + y_dist
       if tot < closest:
         closest = tot
-    print(f'Closest distance : {closest}.')
+    print(f'Closest distance : {closest}')
     file.close()
-  
+
   # part2
   with open(input_name,'r') as file:
-    dist_inter_each_wire = []
-    
-    print('Part2, going through wire intersections.')
+    tot_dist = []
+
     for line in file:
-      cur_wire_inter_distances = []
-      for i in range(len(res[0])):
-        cur_wire_inter_distances.append(find_dist_to_intersection(mat1, line.strip(), [res[0][i], res[1][i]], middle))
-      dist_inter_each_wire.append((cur_wire_inter_distances))
+      cur_line_inter_dist = []
+      for i in range(amount_intersections):
+        cur_line_inter_dist.append(go_through_intersection(mat1, line.strip(), [res[0][i], res[1][i]], matrix_center))
+      tot_dist.append((cur_line_inter_dist))
+ 
+    combined_dist_to_intersection = [0] * amount_intersections 
+    for elt in tot_dist:
+      for i in range(amount_intersections):
+        combined_dist_to_intersection[i] += elt[i]
 
-    assert(len(dist_inter_each_wire) == 2)
-
-    summed_dist = [0] * len(res[0])
-    for elt in dist_inter_each_wire:
-      for i in range(len(res[0])):
-        summed_dist[i] += elt[i]
-
-    print(min(summed_dist))
+    print(f'Fewest combined steps {min(combined_dist_to_intersection)}')
     file.close()
 
 main()
